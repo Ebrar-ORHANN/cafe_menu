@@ -1,5 +1,6 @@
 {
   "expo": {
+    "plugins": ["expo-router"],
     "name": "menu_app",
     "slug": "menu_app",
     "version": "1.0.0",
