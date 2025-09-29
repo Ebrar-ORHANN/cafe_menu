@@ -9,8 +9,8 @@ import {
   Alert,
   Modal,
   ScrollView,
-  Image,
-  StyleSheet
+  StyleSheet,
+  Platform
 } from "react-native";
 import { 
   collection, 
@@ -169,12 +169,8 @@ export default function AdminPanel() {
               await signOut(auth);
               console.log("✅ Admin çıkış yaptı");
               
-              // Web için window.location kullan
-              if (typeof window !== 'undefined') {
-                window.location.href = '/';
-              } else {
-                router.replace("/");
-              }
+              // Router ile ana sayfaya yönlendir
+              router.replace("/");
             } catch (error) {
               console.error("❌ Çıkış hatası:", error);
               Alert.alert("Hata", "Çıkış yapılamadı!");
@@ -188,6 +184,38 @@ export default function AdminPanel() {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Web için görsel komponenti
+  const ProductImage = ({ uri, style }) => {
+    if (Platform.OS === 'web') {
+      return (
+        <img 
+          src={uri} 
+          style={{
+            width: style.width,
+            height: style.height,
+            borderRadius: style.borderRadius,
+            backgroundColor: style.backgroundColor,
+            objectFit: 'cover'
+          }}
+          onError={(e) => {
+            console.log("❌ Görsel yükleme hatası");
+            e.target.style.display = 'none';
+          }}
+        />
+      );
+    }
+    
+    // Native için
+    const Image = require('react-native').Image;
+    return (
+      <Image 
+        source={{ uri }} 
+        style={style}
+        onError={(e) => console.log("❌ Görsel yükleme hatası:", e.nativeEvent.error)}
+      />
+    );
+  };
 
   if (loading) {
     return (
@@ -204,7 +232,6 @@ export default function AdminPanel() {
         <Text style={styles.headerTitle}>☕ Admin Panel</Text>
         
         <View style={styles.headerButtons}>
-          
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
@@ -247,10 +274,9 @@ export default function AdminPanel() {
               </View>
               
               {item.image && (
-                <Image 
-                  source={{ uri: item.image }} 
+                <ProductImage 
+                  uri={item.image}
                   style={styles.productImage}
-                  onError={(e) => console.log("❌ Görsel yükleme hatası:", e.nativeEvent.error)}
                 />
               )}
             </View>
@@ -350,10 +376,9 @@ export default function AdminPanel() {
               {newProduct.image && (
                 <View style={styles.imagePreviewContainer}>
                   <Text style={styles.previewLabel}>Ön İzleme:</Text>
-                  <Image 
-                    source={{ uri: newProduct.image }} 
+                  <ProductImage 
+                    uri={newProduct.image}
                     style={styles.imagePreview}
-                    onError={() => Alert.alert("Uyarı", "Görsel yüklenemedi. URL'yi kontrol edin.")}
                   />
                 </View>
               )}
@@ -416,18 +441,6 @@ const styles = StyleSheet.create({
   headerButtons: {
     flexDirection: "row",
     gap: 8
-  },
-  qrButton: {
-    backgroundColor: "#8b5cf6",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 12,
-    justifyContent: "center"
-  },
-  qrButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14
   },
   addButton: {
     backgroundColor: "#10b981",
@@ -621,9 +634,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 12,
-    backgroundColor: "#f3f4f6",
-    borderWidth: 2,
-    borderColor: "#e5e7eb"
+    backgroundColor: "#f3f4f6"
   },
   modalButtons: {
     flexDirection: "row",

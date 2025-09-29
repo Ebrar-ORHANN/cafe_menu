@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { Link } from "expo-router";
 
 export default function ProductCard({ product }) {
@@ -20,15 +20,42 @@ export default function ProductCard({ product }) {
     }
   };
 
+  // Web için görsel komponenti
+  const ProductImage = ({ uri }) => {
+    if (Platform.OS === 'web') {
+      return (
+        <img 
+          src={uri} 
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+          onError={(e) => {
+            console.log("❌ Görsel yükleme hatası");
+            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f3f4f6" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="40"%3E🍽️%3C/text%3E%3C/svg%3E';
+          }}
+        />
+      );
+    }
+    
+    // Native için
+    const Image = require('react-native').Image;
+    return (
+      <Image 
+        source={{ uri }} 
+        style={styles.image}
+        onError={(e) => console.log("❌ Görsel yükleme hatası:", e.nativeEvent.error)}
+      />
+    );
+  };
+
   return (
     <Link href={`/product/${product.id}`} asChild>
       <View style={styles.card}>
         {/* Product Image Container */}
         <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: product.image }}
-            style={styles.image}
-          />
+          <ProductImage uri={product.image} />
           
           {/* Category Badge */}
           <View style={[
@@ -59,11 +86,7 @@ export default function ProductCard({ product }) {
               {product.price}
             </Text>
             
-            <View style={styles.detailButton}>
-              <Text style={styles.detailButtonText}>
-                
-              </Text>
-            </View>
+            
           </View>
         </View>
       </View>
@@ -148,10 +171,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#f59e0b'
   },
-  
+  detailButton: {
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8
+  },
   detailButtonText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold'
   }
 });
