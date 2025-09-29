@@ -577,7 +577,8 @@ const styles = StyleSheet.create({
   categoryButtonText: {
     textAlign: "center",
     color: "#6b7280",
-    fontWeight: "bold"
+    fontWeight: "bold",
+    fontSize:13
   },
   categoryButtonTextActive: {
     color: "#fff"

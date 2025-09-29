@@ -1,18 +1,27 @@
 {
   "expo": {
-    "plugins": ["expo-router"],
-    "name": "menu_app",
+    "name": "Cafe Menü",
     "slug": "menu_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "menuapp",
+    "scheme": "cafemenu",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier":  "com.bartın.cafemenu",
+      "associatedDomains": [
+        "applinks:cafeumenu.vercel.app"
+      ]
     },
     "android": {
+      "package": "com.bartın.cafemenu",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -20,15 +29,34 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "cafeumenu.vercel.app",
+              "pathPrefix": "/"
+            },
+            {
+              "scheme": "http",
+              "host": "cafeumenu.vercel.app",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png",
-       "bundler": "metro"
-      
-     
-    }
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router",

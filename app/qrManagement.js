@@ -8,7 +8,8 @@ import {
   Alert,
   StyleSheet,
   Share,
-  Linking
+  Linking,
+  Platform
 } from "react-native";
 import {
   collection,
@@ -27,8 +28,10 @@ export default function QRManagement() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Web uygulamanızın URL'i - bunu kendi domain'inizle değiştirin
-  const BASE_URL = "https://cafeumenu.vercel.app"; // Örnek URL
+  // UYARI: Bu URL'i kendi domain'inizle değiştirin!
+  // Web'de çalışıyorsa: https://sizin-domain.com
+  // Expo Go'da test için: exp://192.168.x.x:8081
+  const BASE_URL = process.env.EXPO_PUBLIC_APP_URL || "https://cafeumenu.vercel.app";
 
   const fetchTables = async () => {
     try {
@@ -37,6 +40,12 @@ export default function QRManagement() {
         id: d.id,
         ...d.data()
       }));
+      // En yeni masaları önce göster
+      tablesData.sort((a, b) => {
+        const dateA = a.createdAt?.seconds || 0;
+        const dateB = b.createdAt?.seconds || 0;
+        return dateB - dateA;
+      });
       setTables(tablesData);
     } catch (error) {
       console.error("❌ Masa verilerini yükleme hatası:", error);
@@ -54,12 +63,13 @@ export default function QRManagement() {
 
     try {
       const tableData = {
-        name: tableName,
+        name: tableName.trim(),
         createdAt: new Date(),
-        scans: 0
+        scans: 0,
+        lastScan: null
       };
 
-      const docRef = await addDoc(collection(db, "tables"), tableData);
+      await addDoc(collection(db, "tables"), tableData);
       
       Alert.alert("Başarılı", `${tableName} için QR kod oluşturuldu!`);
       setTableName("");
@@ -95,9 +105,12 @@ export default function QRManagement() {
   };
 
   const getQRCodeURL = (tableId) => {
-    // QR kod oluşturma için Google Charts API kullanıyoruz
+    // Menü URL'i - müşteri bu linke yönlenecek
     const menuURL = `${BASE_URL}?table=${tableId}`;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(menuURL)}`;
+    
+    // QR Server API - daha kaliteli QR kodlar
+    // Alternatif: https://chart.googleapis.com/chart?chs=400x400&cht=qr&chl=${encodeURIComponent(menuURL)}
+    return `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(menuURL)}&margin=10`;
   };
 
   const openQRCode = (tableId, tableName) => {
@@ -107,9 +120,17 @@ export default function QRManagement() {
 
   const shareQRCode = async (tableId, tableName) => {
     try {
+      const menuURL = `${BASE_URL}?table=${tableId}`;
       const qrURL = getQRCodeURL(tableId);
+      
+      const message = Platform.select({
+        ios: `${tableName} - Cafe Menü\n\nQR Kod: ${qrURL}\nDirekt Link: ${menuURL}`,
+        android: `${tableName} - Cafe Menü\n\nQR Kod: ${qrURL}\nDirekt Link: ${menuURL}`,
+        default: `${tableName} - Cafe Menü\n\nQR Kod: ${qrURL}\nDirekt Link: ${menuURL}`
+      });
+
       await Share.share({
-        message: `${tableName} - Cafe Menü QR Kodu\n\n${qrURL}`,
+        message: message,
         title: `${tableName} QR Kod`
       });
     } catch (error) {
@@ -117,17 +138,51 @@ export default function QRManagement() {
     }
   };
 
-  const incrementScan = async (tableId) => {
+  const copyDirectLink = async (tableId, tableName) => {
     try {
-      const tableRef = doc(db, "tables", tableId);
-      const table = tables.find(t => t.id === tableId);
-      await updateDoc(tableRef, {
-        scans: (table?.scans || 0) + 1
-      });
-      fetchTables();
+      const menuURL = `${BASE_URL}?table=${tableId}`;
+      // Not: React Native'de clipboard için @react-native-clipboard/clipboard paketi gerekir
+      // Şimdilik Alert ile gösterelim
+      Alert.alert(
+        "Direkt Link",
+        menuURL,
+        [
+          { text: "Kapat", style: "cancel" },
+          {
+            text: "Paylaş",
+            onPress: () => Share.share({ message: menuURL })
+          }
+        ]
+      );
     } catch (error) {
-      console.error("❌ Tarama sayısı güncelleme hatası:", error);
+      console.error("Link kopyalama hatası:", error);
     }
+  };
+
+  const resetScans = async (tableId, tableName) => {
+    Alert.alert(
+      "Taramaları Sıfırla",
+      `${tableName} için tarama sayısı sıfırlansın mı?`,
+      [
+        { text: "İptal", style: "cancel" },
+        {
+          text: "Sıfırla",
+          onPress: async () => {
+            try {
+              await updateDoc(doc(db, "tables", tableId), {
+                scans: 0,
+                lastScan: null
+              });
+              Alert.alert("Başarılı", "Tarama sayısı sıfırlandı!");
+              fetchTables();
+            } catch (error) {
+              console.error("❌ Sıfırlama hatası:", error);
+              Alert.alert("Hata", "Sıfırlama yapılamadı!");
+            }
+          }
+        }
+      ]
+    );
   };
 
   useEffect(() => {
@@ -150,10 +205,11 @@ export default function QRManagement() {
         
         <View style={styles.inputContainer}>
           <TextInput
-            placeholder="Masa adı (örn: Masa 1, Masa 2)"
+            placeholder="Masa adı (örn: Masa 1, Bahçe Masası)"
             value={tableName}
             onChangeText={setTableName}
             style={styles.input}
+            maxLength={30}
           />
           
           <TouchableOpacity
@@ -172,13 +228,31 @@ export default function QRManagement() {
           1. Masa adı girin ve QR kod oluşturun{'\n'}
           2. QR kodu görüntüleyin veya paylaşın{'\n'}
           3. QR kodu yazdırıp masalara yerleştirin{'\n'}
-          4. Müşteriler QR'ı okutarak menüye ulaşsın
+          4. Müşteriler QR'ı okutarak menüye ulaşsın{'\n'}
+          5. Tarama istatistiklerini takip edin
         </Text>
       </View>
 
+      {/* Statistics */}
+      {tables.length > 0 && (
+        <View style={styles.statsCard}>
+          <Text style={styles.statsTitle}>📊 İstatistikler</Text>
+          <View style={styles.statsRow}>
+            <Text style={styles.statItem}>
+              🏷️ Toplam Masa: {tables.length}
+            </Text>
+            <Text style={styles.statItem}>
+              👁️ Toplam Tarama: {tables.reduce((sum, t) => sum + (t.scans || 0), 0)}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* Tables List */}
       <View style={styles.listHeader}>
-        <Text style={styles.listTitle}>Oluşturulan QR Kodlar ({tables.length})</Text>
+        <Text style={styles.listTitle}>
+          Oluşturulan QR Kodlar ({tables.length})
+        </Text>
       </View>
 
       <FlatList
@@ -188,23 +262,36 @@ export default function QRManagement() {
           <View style={styles.tableCard}>
             <View style={styles.tableHeader}>
               <Text style={styles.tableName}>{item.name}</Text>
-              <View style={styles.scanBadge}>
+              <TouchableOpacity
+                style={styles.scanBadge}
+                onPress={() => resetScans(item.id, item.name)}
+              >
                 <Text style={styles.scanText}>
                   👁️ {item.scans || 0} tarama
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
 
             <Text style={styles.tableDate}>
-              Oluşturulma: {new Date(item.createdAt?.seconds * 1000).toLocaleDateString('tr-TR')}
+              Oluşturulma: {new Date(item.createdAt?.seconds * 1000).toLocaleDateString('tr-TR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
             </Text>
+
+            {item.lastScan && (
+              <Text style={styles.lastScanText}>
+                Son tarama: {new Date(item.lastScan?.seconds * 1000).toLocaleString('tr-TR')}
+              </Text>
+            )}
 
             <View style={styles.tableActions}>
               <TouchableOpacity
                 style={styles.viewButton}
                 onPress={() => openQRCode(item.id, item.name)}
               >
-                <Text style={styles.viewButtonText}>👁️ QR Görüntüle</Text>
+                <Text style={styles.viewButtonText}>👁️ QR Aç</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -212,6 +299,13 @@ export default function QRManagement() {
                 onPress={() => shareQRCode(item.id, item.name)}
               >
                 <Text style={styles.shareButtonText}>📤 Paylaş</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.linkButton}
+                onPress={() => copyDirectLink(item.id, item.name)}
+              >
+                <Text style={styles.linkButtonText}>🔗</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -228,9 +322,10 @@ export default function QRManagement() {
 
       {tables.length === 0 && (
         <View style={styles.emptyContainer}>
+          <Text style={styles.emptyEmoji}>🏷️</Text>
           <Text style={styles.emptyText}>
             Henüz QR kod oluşturulmadı.{'\n'}
-            Yukarıdan masa ekleyerek başlayın! 🏷️
+            Yukarıdan masa ekleyerek başlayın!
           </Text>
         </View>
       )}
@@ -295,6 +390,7 @@ const styles = StyleSheet.create({
   infoCard: {
     backgroundColor: "#eff6ff",
     margin: 20,
+    marginBottom: 10,
     padding: 16,
     borderRadius: 12,
     borderLeftWidth: 4,
@@ -310,6 +406,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#1e40af",
     lineHeight: 22
+  },
+  statsCard: {
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    marginBottom: 10,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2
+  },
+  statsTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 10
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around"
+  },
+  statItem: {
+    fontSize: 14,
+    color: "#6b7280",
+    fontWeight: "600"
   },
   listHeader: {
     paddingHorizontal: 20,
@@ -344,7 +467,8 @@ const styles = StyleSheet.create({
   tableName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#1f2937"
+    color: "#1f2937",
+    flex: 1
   },
   scanBadge: {
     backgroundColor: "#f3f4f6",
@@ -360,7 +484,13 @@ const styles = StyleSheet.create({
   tableDate: {
     fontSize: 12,
     color: "#9ca3af",
-    marginBottom: 12
+    marginBottom: 4
+  },
+  lastScanText: {
+    fontSize: 11,
+    color: "#10b981",
+    marginBottom: 12,
+    fontWeight: "600"
   },
   tableActions: {
     flexDirection: "row",
@@ -379,7 +509,7 @@ const styles = StyleSheet.create({
     fontSize: 13
   },
   shareButton: {
-    flex: 1,
+    flex: 2,
     backgroundColor: "#10b981",
     paddingVertical: 10,
     borderRadius: 10,
@@ -390,9 +520,20 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 13
   },
+  linkButton: {
+    backgroundColor: "#8b5cf6",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    justifyContent: "center"
+  },
+  linkButtonText: {
+    color: "#fff",
+    fontSize: 16
+  },
   deleteButton: {
     backgroundColor: "#ef4444",
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
     justifyContent: "center"
@@ -406,6 +547,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 40
+  },
+  emptyEmoji: {
+    fontSize: 64,
+    marginBottom: 16
   },
   emptyText: {
     fontSize: 16,
