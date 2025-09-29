@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { Link } from "expo-router";
 
 export default function ProductCard({ product }) {
@@ -22,106 +22,136 @@ export default function ProductCard({ product }) {
 
   return (
     <Link href={`/product/${product.id}`} asChild>
-      <TouchableOpacity style={{
-        backgroundColor: "#fff",
-        borderRadius: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.1,
-        shadowRadius: 24,
-        elevation: 8,
-        overflow: 'hidden',
-        transform: [{ scale: 1 }]
-      }}>
-        {/* Product Image */}
-        <View style={{
-          position: 'relative',
-          backgroundColor: '#f8fafc'
-        }}>
+      <View style={styles.card}>
+        {/* Product Image Container */}
+        <View style={styles.imageContainer}>
           <Image
             source={{ uri: product.image }}
-            style={{
-              width: '100%',
-              height: 140,
-              resizeMode: 'contain'
-            }}
+            style={styles.image}
           />
           
           {/* Category Badge */}
-          <View style={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            backgroundColor: getCategoryColor(product.category),
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 12,
-            flexDirection: 'row',
-            alignItems: 'center'
-          }}>
-            <Text style={{ fontSize: 10, marginRight: 2 }}>
+          <View style={[
+            styles.categoryBadge,
+            { backgroundColor: getCategoryColor(product.category) }
+          ]}>
+            <Text style={styles.categoryIcon}>
               {getCategoryIcon(product.category)}
             </Text>
-            <Text style={{
-              color: '#fff',
-              fontSize: 10,
-              fontWeight: 'bold'
-            }}>
+            <Text style={styles.categoryText}>
               {product.category}
             </Text>
           </View>
         </View>
 
         {/* Product Info */}
-        <View style={{ padding: 16 }}>
-          <Text style={{
-            fontSize: 16,
-            fontWeight: 'bold',
-            color: '#1f2937',
-            marginBottom: 4
-          }}>
+        <View style={styles.infoContainer}>
+          <Text style={styles.productName} numberOfLines={1}>
             {product.name}
           </Text>
           
-          <Text style={{
-            fontSize: 12,
-            color: '#6b7280',
-            marginBottom: 12,
-            lineHeight: 16
-          }} numberOfLines={2}>
+          <Text style={styles.productDescription} numberOfLines={2}>
             {product.description}
           </Text>
           
-          <View style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <Text style={{
-              fontSize: 18,
-              fontWeight: 'bold',
-              color: '#f59e0b'
-            }}>
+          <View style={styles.footer}>
+            <Text style={styles.price}>
               {product.price}
             </Text>
             
-            <View style={{
-              backgroundColor: '#f59e0b',
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 20
-            }}>
-              <Text style={{
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 'bold'
-              }}>
-                Detay
+            <View style={styles.detailButton}>
+              <Text style={styles.detailButtonText}>
+                
               </Text>
             </View>
           </View>
         </View>
-      </TouchableOpacity>
+      </View>
     </Link>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    marginHorizontal: 6,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 5,
+    overflow: 'hidden',
+    maxWidth: '48%'
+  },
+  imageContainer: {
+    position: 'relative',
+    backgroundColor: '#f8fafc',
+    height: 140,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover'
+  },
+  categoryBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  categoryIcon: {
+    fontSize: 11,
+    marginRight: 3
+  },
+  categoryText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold'
+  },
+  infoContainer: {
+    padding: 14
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 6
+  },
+  productDescription: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 12,
+    lineHeight: 17,
+    minHeight: 34
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  price: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#f59e0b'
+  },
+  
+  detailButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold'
+  }
+});
