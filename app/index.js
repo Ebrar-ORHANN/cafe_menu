@@ -1,14 +1,18 @@
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useState, useEffect } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, getDoc } from "firebase/firestore";
 import { db, testFirebaseConnection } from "../constants/firebase";
 import ProductCard from "../components/ProductCard";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('Tümü');
+  const [tableName, setTableName] = useState(null);
+  
+  // QR kod parametresini al
+  const params = useLocalSearchParams();
 
   const categories = ['Tümü', 'İçecekler', 'Yiyecekler', 'Pastalar'];
 
@@ -34,9 +38,41 @@ export default function HomePage() {
     }
   };
 
+  const handleQRScan = async (tableId) => {
+    if (!tableId) return;
+
+    try {
+      // Masa bilgisini al
+      const tableRef = doc(db, "tables", tableId);
+      const tableDoc = await getDoc(tableRef);
+
+      if (tableDoc.exists()) {
+        const tableData = tableDoc.data();
+        setTableName(tableData.name);
+
+        // Tarama sayısını artır
+        await updateDoc(tableRef, {
+          scans: (tableData.scans || 0) + 1,
+          lastScan: new Date()
+        });
+
+        console.log(`✅ ${tableData.name} için QR kod tarandı!`);
+      } else {
+        console.log("⚠️ Masa bulunamadı");
+      }
+    } catch (error) {
+      console.error("❌ QR kod işleme hatası:", error);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
-  }, []);
+    
+    // URL'den gelen table parametresini kontrol et
+    if (params.table) {
+      handleQRScan(params.table);
+    }
+  }, [params.table]);
 
   const filteredProducts = selectedCategory === 'Tümü' 
     ? products 
@@ -56,7 +92,12 @@ export default function HomePage() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>☕ Cafe Menü</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>☕ Cafe Menü</Text>
+          {tableName && (
+            <Text style={styles.tableLabel}>📍 {tableName}</Text>
+          )}
+        </View>
         
         {/* Admin Giriş Butonu */}
         <Link href="/adminLogin" asChild>
@@ -132,10 +173,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4
   },
+  headerLeft: {
+    flex: 1
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#1f2937"
+  },
+  tableLabel: {
+    fontSize: 14,
+    color: "#8b5cf6",
+    fontWeight: "600",
+    marginTop: 4
   },
   adminButton: {
     backgroundColor: "#f59e0b",
@@ -189,7 +239,7 @@ const styles = StyleSheet.create({
     padding: 20
   },
   row: {
-    justifyContent: "space-between"
+    justifyContent: "flex-start"
   },
   emptyContainer: {
     flex: 1,

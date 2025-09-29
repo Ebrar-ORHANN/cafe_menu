@@ -186,7 +186,15 @@ export default function AdminPanel() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>☕ Admin Panel</Text>
+        
         <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.qrButton}
+            onPress={() => router.push("/qrManagement")}
+          >
+            <Text style={styles.qrButtonText}>🏷️ QR Kodlar</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
@@ -383,34 +391,47 @@ const styles = StyleSheet.create({
   },
   headerButtons: {
     flexDirection: "row",
-    justifyContent: "space-between"
+    gap: 8
+  },
+  qrButton: {
+    backgroundColor: "#8b5cf6",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    justifyContent: "center"
+  },
+  qrButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14
   },
   addButton: {
     backgroundColor: "#10b981",
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 12,
     flex: 1,
-    marginRight: 10
+    justifyContent: "center",
+    alignItems: "center"
   },
   addButtonText: {
     color: "#fff",
     fontWeight: "bold",
     textAlign: "center",
-    fontSize: 16
+    fontSize: 15
   },
   logoutButton: {
     backgroundColor: "#ef4444",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
-    minWidth: 80
+    justifyContent: "center"
   },
   logoutButtonText: {
     color: "#fff",
     fontWeight: "bold",
     textAlign: "center",
-    fontSize: 16
+    fontSize: 15
   },
   listContainer: {
     padding: 20
