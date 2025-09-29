@@ -20,7 +20,8 @@ import {
   addDoc, 
   deleteDoc 
 } from "firebase/firestore";
-import { db } from "../constants/firebase";
+import { db, auth } from "../constants/firebase";
+import { signOut } from "firebase/auth";
 import { useRouter } from "expo-router";
 
 export default function AdminPanel() {
@@ -155,7 +156,7 @@ export default function AdminPanel() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
       "Çıkış Yap",
       "Admin panelinden çıkmak istediğinize emin misiniz?",
@@ -163,7 +164,22 @@ export default function AdminPanel() {
         { text: "İptal", style: "cancel" },
         {
           text: "Çıkış Yap",
-          onPress: () => router.replace("/")
+          onPress: async () => {
+            try {
+              await signOut(auth);
+              console.log("✅ Admin çıkış yaptı");
+              
+              // Web için window.location kullan
+              if (typeof window !== 'undefined') {
+                window.location.href = '/';
+              } else {
+                router.replace("/");
+              }
+            } catch (error) {
+              console.error("❌ Çıkış hatası:", error);
+              Alert.alert("Hata", "Çıkış yapılamadı!");
+            }
+          }
         }
       ]
     );
@@ -188,13 +204,7 @@ export default function AdminPanel() {
         <Text style={styles.headerTitle}>☕ Admin Panel</Text>
         
         <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={styles.qrButton}
-            onPress={() => router.push("/qrManagement")}
-          >
-            <Text style={styles.qrButtonText}>🏷️ QR Kodlar</Text>
-          </TouchableOpacity>
-
+          
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
@@ -239,7 +249,8 @@ export default function AdminPanel() {
               {item.image && (
                 <Image 
                   source={{ uri: item.image }} 
-                  style={styles.productImage} 
+                  style={styles.productImage}
+                  onError={(e) => console.log("❌ Görsel yükleme hatası:", e.nativeEvent.error)}
                 />
               )}
             </View>
@@ -328,11 +339,24 @@ export default function AdminPanel() {
               </View>
 
               <TextInput
-                placeholder="Resim URL'si (isteğe bağlı)"
+                placeholder="Resim URL'si (örn: https://example.com/image.jpg)"
                 value={newProduct.image}
                 onChangeText={(text) => setNewProduct(prev => ({...prev, image: text}))}
                 style={styles.modalInput}
+                autoCapitalize="none"
+                autoCorrect={false}
               />
+              
+              {newProduct.image && (
+                <View style={styles.imagePreviewContainer}>
+                  <Text style={styles.previewLabel}>Ön İzleme:</Text>
+                  <Image 
+                    source={{ uri: newProduct.image }} 
+                    style={styles.imagePreview}
+                    onError={() => Alert.alert("Uyarı", "Görsel yüklenemedi. URL'yi kontrol edin.")}
+                  />
+                </View>
+              )}
 
               <View style={styles.modalButtons}>
                 <TouchableOpacity
@@ -582,6 +606,24 @@ const styles = StyleSheet.create({
   },
   categoryButtonTextActive: {
     color: "#fff"
+  },
+  imagePreviewContainer: {
+    marginBottom: 15,
+    alignItems: "center"
+  },
+  previewLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#6b7280",
+    marginBottom: 8
+  },
+  imagePreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+    backgroundColor: "#f3f4f6",
+    borderWidth: 2,
+    borderColor: "#e5e7eb"
   },
   modalButtons: {
     flexDirection: "row",
