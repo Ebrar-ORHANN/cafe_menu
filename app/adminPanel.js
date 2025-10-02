@@ -51,7 +51,13 @@ export default function AdminPanel() {
         console.log("✅ Kullanıcı oturum açık:", currentUser.email);
       } else {
         console.log("⚠️ Kullanıcı oturumu yok, ana sayfaya yönlendiriliyor");
-        router.replace("/");
+        
+        // Web için özel yönlendirme
+        if (Platform.OS === 'web') {
+          window.location.href = '/';
+        } else {
+          router.replace("/");
+        }
       }
     });
 
@@ -174,37 +180,51 @@ export default function AdminPanel() {
   };
 
   const handleLogout = async () => {
-    Alert.alert(
-      "Çıkış Yap",
-      "Admin panelinden çıkmak istediğinize emin misiniz?",
-      [
-        { text: "İptal", style: "cancel" },
-        {
-          text: "Çıkış Yap",
-          onPress: async () => {
-            try {
-              await signOut(auth);
-              console.log("✅ Admin çıkış yaptı");
-              
-              // Router ile ana sayfaya yönlendir
-              // replace yerine push kullan ve force refresh
-              router.push("/");
-              
-              // Ek güvenlik: biraz bekle ve tekrar kontrol et
-              setTimeout(() => {
-                if (auth.currentUser) {
-                  console.log("⚠️ Oturum hala açık, tekrar kapatılıyor");
-                  signOut(auth).then(() => router.replace("/"));
-                }
-              }, 500);
-            } catch (error) {
-              console.error("❌ Çıkış hatası:", error);
-              Alert.alert("Hata", "Çıkış yapılamadı!");
-            }
-          }
+    const confirmAction = Platform.OS === 'web' 
+      ? window.confirm("Admin panelinden çıkmak istediğinize emin misiniz?")
+      : await new Promise((resolve) => {
+          Alert.alert(
+            "Çıkış Yap",
+            "Admin panelinden çıkmak istediğinize emin misiniz?",
+            [
+              { text: "İptal", style: "cancel", onPress: () => resolve(false) },
+              { text: "Çıkış Yap", onPress: () => resolve(true) }
+            ]
+          );
+        });
+
+    if (!confirmAction) return;
+
+    try {
+      console.log("🔄 Çıkış işlemi başlatılıyor...");
+      
+      // Önce auth'dan çıkış yap
+      await signOut(auth);
+      console.log("✅ Firebase Auth'dan çıkış yapıldı");
+      
+      // Web için direkt window.location kullan
+      if (Platform.OS === 'web') {
+        console.log("🌐 Web için yönlendirme yapılıyor...");
+        // Cache'i temizle
+        if (window.caches) {
+          const cacheNames = await window.caches.keys();
+          await Promise.all(cacheNames.map(name => window.caches.delete(name)));
         }
-      ]
-    );
+        // Ana sayfaya yönlendir
+        window.location.href = '/';
+      } else {
+        // Mobile için router kullan
+        router.replace("/");
+      }
+    } catch (error) {
+      console.error("❌ Çıkış hatası:", error);
+      if (Platform.OS === 'web') {
+        alert("Çıkış yapılamadı! Sayfa yenileniyor...");
+        window.location.href = '/';
+      } else {
+        Alert.alert("Hata", "Çıkış yapılamadı!");
+      }
+    }
   };
 
   useEffect(() => {
