@@ -180,52 +180,33 @@ export default function AdminPanel() {
   };
 
   const handleLogout = async () => {
-    const confirmAction = Platform.OS === 'web' 
-      ? window.confirm("Admin panelinden çıkmak istediğinize emin misiniz?")
-      : await new Promise((resolve) => {
-          Alert.alert(
-            "Çıkış Yap",
-            "Admin panelinden çıkmak istediğinize emin misiniz?",
-            [
-              { text: "İptal", style: "cancel", onPress: () => resolve(false) },
-              { text: "Çıkış Yap", onPress: () => resolve(true) }
-            ]
-          );
-        });
+  const confirmAction = Platform.OS === 'web' 
+    ? window.confirm("Admin panelinden çıkmak istediğinize emin misiniz?")
+    : await new Promise((resolve) => {
+        Alert.alert(
+          "Çıkış Yap",
+          "Admin panelinden çıkmak istediğinize emin misiniz?",
+          [
+            { text: "İptal", style: "cancel", onPress: () => resolve(false) },
+            { text: "Çıkış Yap", onPress: () => resolve(true) }
+          ]
+        );
+      });
 
-    if (!confirmAction) return;
+  if (!confirmAction) return;
 
-    try {
-      console.log("🔄 Çıkış işlemi başlatılıyor...");
-      
-      // Önce auth'dan çıkış yap
-      await signOut(auth);
-      console.log("✅ Firebase Auth'dan çıkış yapıldı");
-      
-      // Web için direkt window.location kullan
-      if (Platform.OS === 'web') {
-        console.log("🌐 Web için yönlendirme yapılıyor...");
-        // Cache'i temizle
-        if (window.caches) {
-          const cacheNames = await window.caches.keys();
-          await Promise.all(cacheNames.map(name => window.caches.delete(name)));
-        }
-        // Ana sayfaya yönlendir
-        window.location.href = '/';
-      } else {
-        // Mobile için router kullan
-        router.replace("/");
-      }
-    } catch (error) {
-      console.error("❌ Çıkış hatası:", error);
-      if (Platform.OS === 'web') {
-        alert("Çıkış yapılamadı! Sayfa yenileniyor...");
-        window.location.href = '/';
-      } else {
-        Alert.alert("Hata", "Çıkış yapılamadı!");
-      }
-    }
-  };
+  try {
+    await signOut(auth);
+
+    // 👇 Hem web hem mobil için tek satır yeterli
+    router.replace("/");
+  } catch (error) {
+    console.error("❌ Çıkış hatası:", error);
+    Alert.alert("Hata", "Çıkış yapılamadı!");
+  }
+};
+
+  
 
   useEffect(() => {
     if (user) {
