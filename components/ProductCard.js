@@ -1,7 +1,10 @@
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { View, Text, StyleSheet, Platform, Image } from "react-native";
 import { Link } from "expo-router";
+import { useState } from "react";
 
 export default function ProductCard({ product }) {
+  const [imageError, setImageError] = useState(false);
+
   const getCategoryIcon = (category) => {
     switch(category) {
       case 'İçecekler': return '🥤';
@@ -20,32 +23,45 @@ export default function ProductCard({ product }) {
     }
   };
 
-  // Web için görsel komponenti
+  // Gelişmiş görsel komponenti
   const ProductImage = ({ uri }) => {
+    if (!uri || imageError) {
+      return (
+        <View style={styles.placeholderContainer}>
+          <Text style={styles.placeholderIcon}>
+            {getCategoryIcon(product.category)}
+          </Text>
+        </View>
+      );
+    }
+
     if (Platform.OS === 'web') {
       return (
         <img 
           src={uri} 
+          alt={product.name}
           style={{
             width: '100%',
             height: '100%',
             objectFit: 'cover'
           }}
-          onError={(e) => {
-            console.log("❌ Görsel yükleme hatası");
-            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f3f4f6" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="40"%3E🍽️%3C/text%3E%3C/svg%3E';
+          onError={() => {
+            console.log("❌ Görsel yükleme hatası:", uri);
+            setImageError(true);
           }}
         />
       );
     }
     
     // Native için
-    const Image = require('react-native').Image;
     return (
       <Image 
         source={{ uri }} 
         style={styles.image}
-        onError={(e) => console.log("❌ Görsel yükleme hatası:", e.nativeEvent.error)}
+        onError={(e) => {
+          console.log("❌ Görsel yükleme hatası:", e.nativeEvent.error);
+          setImageError(true);
+        }}
       />
     );
   };
@@ -85,8 +101,6 @@ export default function ProductCard({ product }) {
             <Text style={styles.price}>
               {product.price}
             </Text>
-            
-            
           </View>
         </View>
       </View>
@@ -120,6 +134,16 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover'
+  },
+  placeholderContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6'
+  },
+  placeholderIcon: {
+    fontSize: 50
   },
   categoryBadge: {
     position: 'absolute',
@@ -170,16 +194,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#f59e0b'
-  },
-  detailButton: {
-    backgroundColor: '#3b82f6',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8
-  },
-  detailButtonText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: 'bold'
   }
 });

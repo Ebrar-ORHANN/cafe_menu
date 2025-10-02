@@ -10,7 +10,8 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Platform
+  Platform,
+  Image
 } from "react-native";
 import { 
   collection, 
@@ -21,7 +22,7 @@ import {
   deleteDoc 
 } from "firebase/firestore";
 import { db, auth } from "../constants/firebase";
-import { signOut } from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "expo-router";
 
 export default function AdminPanel() {
@@ -36,10 +37,26 @@ export default function AdminPanel() {
     category: "İçecekler",
     image: ""
   });
+  const [user, setUser] = useState(null);
 
   const router = useRouter();
 
   const categories = ["İçecekler", "Yiyecekler", "Pastalar"];
+
+  // Auth state'i dinle
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        console.log("✅ Kullanıcı oturum açık:", currentUser.email);
+      } else {
+        console.log("⚠️ Kullanıcı oturumu yok, ana sayfaya yönlendiriliyor");
+        router.replace("/");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const fetchProducts = async () => {
     try {
@@ -170,7 +187,16 @@ export default function AdminPanel() {
               console.log("✅ Admin çıkış yaptı");
               
               // Router ile ana sayfaya yönlendir
-              router.replace("/");
+              // replace yerine push kullan ve force refresh
+              router.push("/");
+              
+              // Ek güvenlik: biraz bekle ve tekrar kontrol et
+              setTimeout(() => {
+                if (auth.currentUser) {
+                  console.log("⚠️ Oturum hala açık, tekrar kapatılıyor");
+                  signOut(auth).then(() => router.replace("/"));
+                }
+              }, 500);
             } catch (error) {
               console.error("❌ Çıkış hatası:", error);
               Alert.alert("Hata", "Çıkış yapılamadı!");
@@ -182,45 +208,60 @@ export default function AdminPanel() {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (user) {
+      fetchProducts();
+    }
+  }, [user]);
 
-  // Web için görsel komponenti
+  // Gelişmiş görsel komponenti
   const ProductImage = ({ uri, style }) => {
+    const [imageError, setImageError] = useState(false);
+
+    if (!uri || imageError) {
+      return (
+        <View style={[style, styles.placeholderImage]}>
+          <Text style={styles.placeholderText}>🍽️</Text>
+        </View>
+      );
+    }
+
     if (Platform.OS === 'web') {
       return (
         <img 
           src={uri} 
+          alt="Product"
           style={{
             width: style.width,
             height: style.height,
             borderRadius: style.borderRadius,
-            backgroundColor: style.backgroundColor,
+            backgroundColor: style.backgroundColor || '#f3f4f6',
             objectFit: 'cover'
           }}
-          onError={(e) => {
+          onError={() => {
             console.log("❌ Görsel yükleme hatası");
-            e.target.style.display = 'none';
+            setImageError(true);
           }}
         />
       );
     }
     
     // Native için
-    const Image = require('react-native').Image;
     return (
       <Image 
         source={{ uri }} 
         style={style}
-        onError={(e) => console.log("❌ Görsel yükleme hatası:", e.nativeEvent.error)}
+        onError={(e) => {
+          console.log("❌ Görsel yükleme hatası:", e.nativeEvent.error);
+          setImageError(true);
+        }}
       />
     );
   };
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.loadingText}>Ürünler yükleniyor...</Text>
+        <Text style={styles.loadingText}>Yükleniyor...</Text>
       </View>
     );
   }
@@ -273,12 +314,10 @@ export default function AdminPanel() {
                 </Text>
               </View>
               
-              {item.image && (
-                <ProductImage 
-                  uri={item.image}
-                  style={styles.productImage}
-                />
-              )}
+              <ProductImage 
+                uri={item.image}
+                style={styles.productImage}
+              />
             </View>
 
             <View style={styles.productFooter}>
@@ -365,13 +404,20 @@ export default function AdminPanel() {
               </View>
 
               <TextInput
-                placeholder="Resim URL'si (örn: https://example.com/image.jpg)"
+                placeholder="Resim URL'si (örn: https://images.unsplash.com/...)"
                 value={newProduct.image}
                 onChangeText={(text) => setNewProduct(prev => ({...prev, image: text}))}
                 style={styles.modalInput}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              
+              <Text style={styles.helperText}>
+                💡 Örnek resimler:{'\n'}
+                Çay: https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=400{'\n'}
+                Sufle: https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=400{'\n'}
+                Patates: https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400
+              </Text>
               
               {newProduct.image && (
                 <View style={styles.imagePreviewContainer}>
@@ -519,6 +565,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#f3f4f6"
   },
+  placeholderImage: {
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  placeholderText: {
+    fontSize: 30
+  },
   productFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -587,6 +640,15 @@ const styles = StyleSheet.create({
   textArea: {
     height: 80,
     textAlignVertical: "top"
+  },
+  helperText: {
+    fontSize: 11,
+    color: "#6b7280",
+    backgroundColor: "#f9fafb",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 15,
+    lineHeight: 16
   },
   labelText: {
     fontSize: 16,
