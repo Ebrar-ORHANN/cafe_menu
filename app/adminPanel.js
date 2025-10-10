@@ -1,4 +1,4 @@
-// app/adminPanel.jsx
+// app/adminPanel.jsx - Cloudinary entegrasyonlu
 import { useEffect, useState } from "react";
 import { 
   View, 
@@ -11,7 +11,8 @@ import {
   ScrollView,
   StyleSheet,
   Platform,
-  Image
+  Image,
+  ActivityIndicator
 } from "react-native";
 import { 
   collection, 
@@ -24,10 +25,12 @@ import {
 import { db, auth } from "../constants/firebase";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "expo-router";
+import { pickImage, takePhoto, uploadToCloudinary, testCloudinaryConfig } from "../utils/cloudinaryUpload";
 
 export default function AdminPanel() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [newProduct, setNewProduct] = useState({
@@ -40,7 +43,6 @@ export default function AdminPanel() {
   const [user, setUser] = useState(null);
 
   const router = useRouter();
-
   const categories = ["İçecekler", "Yiyecekler", "Pastalar"];
 
   // Auth state'i dinle
@@ -49,10 +51,12 @@ export default function AdminPanel() {
       if (currentUser) {
         setUser(currentUser);
         console.log("✅ Kullanıcı oturum açık:", currentUser.email);
+        
+        // Cloudinary yapılandırmasını test et
+        testCloudinaryConfig();
       } else {
         console.log("⚠️ Kullanıcı oturumu yok, ana sayfaya yönlendiriliyor");
         
-        // Web için özel yönlendirme
         if (Platform.OS === 'web') {
           window.location.href = '/';
         } else {
@@ -74,6 +78,69 @@ export default function AdminPanel() {
       Alert.alert("Hata", "Ürünler yüklenemedi!");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Galeri'den resim seç
+  const handlePickImage = async () => {
+    try {
+      const image = await pickImage();
+      if (image) {
+        await handleUploadImage(image.uri);
+      }
+    } catch (error) {
+      Alert.alert("Hata", error.message);
+    }
+  };
+
+  // Kameradan fotoğraf çek
+  const handleTakePhoto = async () => {
+    try {
+      const photo = await takePhoto();
+      if (photo) {
+        await handleUploadImage(photo.uri);
+      }
+    } catch (error) {
+      Alert.alert("Hata", error.message);
+    }
+  };
+
+  // Cloudinary'ye yükle
+  const handleUploadImage = async (imageUri) => {
+    setUploading(true);
+    try {
+      const result = await uploadToCloudinary(imageUri);
+      
+      setNewProduct(prev => ({
+        ...prev,
+        image: result.url
+      }));
+      
+      Alert.alert("Başarılı", "Resim yüklendi!");
+    } catch (error) {
+      console.error("❌ Yükleme hatası:", error);
+      Alert.alert("Hata", "Resim yüklenemedi: " + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Resim seçim modalı göster
+  const showImagePicker = () => {
+    if (Platform.OS === 'web') {
+      // Web için sadece galeri
+      handlePickImage();
+    } else {
+      // Mobil için seçenek menüsü
+      Alert.alert(
+        "Resim Seç",
+        "Resmi nereden eklemek istersiniz?",
+        [
+          { text: "İptal", style: "cancel" },
+          { text: "📸 Fotoğraf Çek", onPress: handleTakePhoto },
+          { text: "🖼️ Galeriden Seç", onPress: handlePickImage }
+        ]
+      );
     }
   };
 
@@ -180,33 +247,29 @@ export default function AdminPanel() {
   };
 
   const handleLogout = async () => {
-  const confirmAction = Platform.OS === 'web' 
-    ? window.confirm("Admin panelinden çıkmak istediğinize emin misiniz?")
-    : await new Promise((resolve) => {
-        Alert.alert(
-          "Çıkış Yap",
-          "Admin panelinden çıkmak istediğinize emin misiniz?",
-          [
-            { text: "İptal", style: "cancel", onPress: () => resolve(false) },
-            { text: "Çıkış Yap", onPress: () => resolve(true) }
-          ]
-        );
-      });
+    const confirmAction = Platform.OS === 'web' 
+      ? window.confirm("Admin panelinden çıkmak istediğinize emin misiniz?")
+      : await new Promise((resolve) => {
+          Alert.alert(
+            "Çıkış Yap",
+            "Admin panelinden çıkmak istediğinize emin misiniz?",
+            [
+              { text: "İptal", style: "cancel", onPress: () => resolve(false) },
+              { text: "Çıkış Yap", onPress: () => resolve(true) }
+            ]
+          );
+        });
 
-  if (!confirmAction) return;
+    if (!confirmAction) return;
 
-  try {
-    await signOut(auth);
-
-    // 👇 Hem web hem mobil için tek satır yeterli
-    router.replace("/");
-  } catch (error) {
-    console.error("❌ Çıkış hatası:", error);
-    Alert.alert("Hata", "Çıkış yapılamadı!");
-  }
-};
-
-  
+    try {
+      await signOut(auth);
+      router.replace("/");
+    } catch (error) {
+      console.error("❌ Çıkış hatası:", error);
+      Alert.alert("Hata", "Çıkış yapılamadı!");
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -246,7 +309,6 @@ export default function AdminPanel() {
       );
     }
     
-    // Native için
     return (
       <Image 
         source={{ uri }} 
@@ -354,7 +416,7 @@ export default function AdminPanel() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <ScrollView>
+            <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitle}>
                 {editingProduct ? "Ürün Düzenle" : "Yeni Ürün Ekle"}
               </Text>
@@ -404,20 +466,28 @@ export default function AdminPanel() {
                 ))}
               </View>
 
-              <TextInput
-                placeholder="Resim URL'si (örn: https://images.unsplash.com/...)"
-                value={newProduct.image}
-                onChangeText={(text) => setNewProduct(prev => ({...prev, image: text}))}
-                style={styles.modalInput}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              {/* Resim Yükleme Bölümü */}
+              <Text style={styles.labelText}>Ürün Resmi:</Text>
               
+              <TouchableOpacity 
+                style={styles.uploadButton}
+                onPress={showImagePicker}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <View style={styles.uploadingContainer}>
+                    <ActivityIndicator color="#fff" size="small" />
+                    <Text style={styles.uploadButtonText}>Yükleniyor...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.uploadButtonText}>
+                    {Platform.OS === 'web' ? '📁 Resim Seç' : '📸 Resim Ekle'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+
               <Text style={styles.helperText}>
-                💡 Örnek resimler:{'\n'}
-                Çay: https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=400{'\n'}
-                Sufle: https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=400{'\n'}
-                Patates: https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400
+                💡 Telefonunuzun galerisinden veya kamerasından resim ekleyebilirsiniz
               </Text>
               
               {newProduct.image && (
@@ -427,6 +497,12 @@ export default function AdminPanel() {
                     uri={newProduct.image}
                     style={styles.imagePreview}
                   />
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={() => setNewProduct(prev => ({...prev, image: ""}))}
+                  >
+                    <Text style={styles.removeImageText}>🗑️ Resmi Kaldır</Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -441,6 +517,7 @@ export default function AdminPanel() {
                 <TouchableOpacity
                   style={styles.saveButton}
                   onPress={editingProduct ? handleSaveEdit : handleAddProduct}
+                  disabled={uploading}
                 >
                   <Text style={styles.saveButtonText}>
                     {editingProduct ? "Güncelle" : "Ekle"}
@@ -642,20 +719,12 @@ const styles = StyleSheet.create({
     height: 80,
     textAlignVertical: "top"
   },
-  helperText: {
-    fontSize: 11,
-    color: "#6b7280",
-    backgroundColor: "#f9fafb",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 15,
-    lineHeight: 16
-  },
   labelText: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#1f2937",
-    marginBottom: 10
+    marginBottom: 10,
+    marginTop: 5
   },
   categoryContainer: {
     flexDirection: "row",
@@ -678,26 +747,67 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#6b7280",
     fontWeight: "bold",
-    fontSize:13
+    fontSize: 13
   },
   categoryButtonTextActive: {
     color: "#fff"
   },
+  uploadButton: {
+    backgroundColor: "#8b5cf6",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 10
+  },
+  uploadButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16
+  },
+  uploadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
+  },
+  helperText: {
+    fontSize: 12,
+    color: "#6b7280",
+    backgroundColor: "#f9fafb",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 15,
+    lineHeight: 18
+  },
   imagePreviewContainer: {
     marginBottom: 15,
-    alignItems: "center"
+    alignItems: "center",
+    backgroundColor: "#f9fafb",
+    padding: 15,
+    borderRadius: 12
   },
   previewLabel: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#6b7280",
-    marginBottom: 8
+    marginBottom: 12
   },
   imagePreview: {
-    width: 120,
-    height: 120,
+    width: 150,
+    height: 150,
     borderRadius: 12,
-    backgroundColor: "#f3f4f6"
+    backgroundColor: "#f3f4f6",
+    marginBottom: 12
+  },
+  removeImageButton: {
+    backgroundColor: "#ef4444",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8
+  },
+  removeImageText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 13
   },
   modalButtons: {
     flexDirection: "row",

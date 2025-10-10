@@ -23,7 +23,7 @@ export default function AdminLogin() {
       const user = userCredential.user;
       console.log("✅ Admin giriş yaptı:", user.email);
 
-      // Admin sayfasına yönlendir
+     
       router.replace("/adminPanel");
     } catch (error) {
       console.error("❌ Giriş hatası:", error.message);

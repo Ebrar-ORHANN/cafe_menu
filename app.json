@@ -58,7 +58,8 @@
       "favicon": "./assets/images/favicon.png",
       "bundler": "metro"
     },
-    "plugins": [
+    "plugins": 
+    [
       "expo-router",
       [
         "expo-splash-screen",
@@ -71,7 +72,14 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      [
+       "expo-image-picker",
+        {
+          "photosPermission": "Menü için ürün fotoğrafları eklemek istiyoruz.",
+          "cameraPermission": "Menü için ürün fotoğrafları çekmek istiyoruz."
+        }
+         ]
     ],
     "experiments": {
       "typedRoutes": true,

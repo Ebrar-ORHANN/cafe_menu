@@ -14,7 +14,7 @@ export default function HomePage() {
   // QR kod parametresini al
   const params = useLocalSearchParams();
 
-  const categories = ['Tümü', 'İçecekler', 'Yiyecekler', 'Pastalar'];
+  const categories = ['Tümü', 'İçecekler', 'Yiyecekler', 'Tatlılar'];
 
   const fetchProducts = async () => {
     try {
@@ -68,7 +68,7 @@ export default function HomePage() {
   useEffect(() => {
     fetchProducts();
     
-    // URL'den gelen table parametresini kontrol et
+    
     if (params.table) {
       handleQRScan(params.table);
     }
@@ -82,7 +82,7 @@ export default function HomePage() {
     switch(category) {
       case 'İçecekler': return '🥤';
       case 'Yiyecekler': return '🍽️';
-      case 'Pastalar': return '🧁';
+      case 'Tatlılar': return '🧁';
       case 'Tümü': return '🍴';
       default: return '🍴';
     }
@@ -93,7 +93,7 @@ export default function HomePage() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>☕ Cafe Menü</Text>
+          <Text style={styles.headerTitle}>☕ Kafe Menü</Text>
           {tableName && (
             <Text style={styles.tableLabel}>📍 {tableName}</Text>
           )}

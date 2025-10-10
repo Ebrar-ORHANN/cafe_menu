@@ -9,7 +9,7 @@ export default function ProductCard({ product }) {
     switch(category) {
       case 'İçecekler': return '🥤';
       case 'Yiyecekler': return '🍽️';
-      case 'Pastalar': return '🧁';
+      case 'Tatlılar': return '🧁';
       default: return '🍴';
     }
   };
@@ -18,7 +18,7 @@ export default function ProductCard({ product }) {
     switch(category) {
       case 'İçecekler': return '#3b82f6';
       case 'Yiyecekler': return '#10b981';
-      case 'Pastalar': return '#f59e0b';
+      case 'Tatlılar': return '#f59e0b';
       default: return '#6b7280';
     }
   };
