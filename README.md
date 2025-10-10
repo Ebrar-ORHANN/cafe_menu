@@ -1,50 +1,47 @@
-# Welcome to your Expo app 👋
+# ☕ QR Menü Sistemi - Dijital Kafe Menüsü
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Modern kafeler ve restoranlar için geliştirilmiş, QR kod tabanlı dijital menü yönetim sistemi.
 
-## Get started
+![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)
 
-1. Install dependencies
+## 📱 Proje Hakkında
 
-   ```bash
-   npm install
-   ```
+Bu proje, yeni açılan bir kafe için geliştirdiğim tam özellikli bir dijital menü sistemidir. Müşteriler masalarındaki QR kodu okutarak menüye anında erişebilir, işletme sahipleri ise admin panelinden kolayca menü yönetimi yapabilir.
 
-2. Start the app
+### ✨ Öne Çıkan Özellikler
 
-   ```bash
-   npx expo start
-   ```
+- 📱 **Cross-Platform**: iOS, Android ve Web desteği
+- 🔐 **Güvenli Admin Paneli**: Firebase Authentication ile korumalı
+- 📸 **Görsel Yönetimi**: Kamera veya galeriden direkt ürün fotoğrafı ekleme
+- 🏷️ **QR Kod Sistemi**: Masa bazlı menü erişimi ve takibi
+- ⚡ **Real-Time Updates**: Anlık menü güncellemeleri
+- 📊 **İstatistikler**: Masa tarama verileri ve analitik
+- 🎨 **Modern UI/UX**: Kullanıcı dostu arayüz tasarımı
 
-In the output, you'll find options to open the app in a
+## 🚀 Teknolojiler
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Frontend
+- **React Native** - Cross-platform mobil uygulama geliştirme
+- **Expo Router** - File-based routing sistemi
+- **React Hooks** - State yönetimi
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Backend
+- **Firebase Firestore** - NoSQL veritabanı
+- **Firebase Authentication** - Kullanıcı kimlik doğrulama
+- **Firebase Storage** - Dosya depolama
 
-## Get a fresh project
+### Diğer Servisler
+- **Cloudinary** - Profesyonel görsel yönetimi ve CDN
+- **Expo Image Picker** - Kamera ve galeri entegrasyonu
 
-When you're ready, run:
+## 📋 Gereksinimler
 
-```bash
-npm run reset-project
-```
+- Node.js (v14 veya üzeri)
+- npm veya yarn
+- Expo CLI
+- Firebase hesabı
+- Cloudinary hesabı
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
