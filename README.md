@@ -46,10 +46,10 @@ Bu proje, yeni açılan bir kafe için geliştirdiğim tam özellikli bir dijita
 - Cloudinary hesabı
 
 
-![Image 1](assets/images/image1.png)
-![Image 2](assets/images/image2.png)
-![Image 3](assets/images/image3.png)
-![Image 4](assets/images/image4.png)
-![Image 5](assets/images/image5.png)
+![Image 1](assets/images/image1.jpg)
+![Image 2](assets/images/image2.jpg)
+![Image 3](assets/images/image3.jpg)
+![Image 4](assets/images/image4.jpg)
+![Image 5](assets/images/image5.jpg)
 
 
