@@ -37,7 +37,7 @@ export default function AdminLogin() {
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>🔑 Admin Giriş</Text>
-        <Text style={styles.subtitle}>Cafe Menü Yönetim Paneli</Text>
+        <Text style={styles.subtitle}>Kafe Menü Yönetim Paneli</Text>
 
         <TextInput
           placeholder="Email adresinizi girin"

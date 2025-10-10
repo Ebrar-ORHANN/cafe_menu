@@ -188,10 +188,11 @@ const styles = StyleSheet.create({
     marginTop: 4
   },
   adminButton: {
-    backgroundColor: "#f59e0b",
+    backgroundColor: "lightgray",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20
+    borderRadius: 20,
+    opacity:0.9
   },
   adminButtonText: {
     color: "#fff",

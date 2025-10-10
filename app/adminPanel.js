@@ -43,7 +43,7 @@ export default function AdminPanel() {
   const [user, setUser] = useState(null);
 
   const router = useRouter();
-  const categories = ["İçecekler", "Yiyecekler", "Pastalar"];
+  const categories = ["İçecekler", "Yiyecekler", "Tatlılar"];
 
   // Auth state'i dinle
   useEffect(() => {
@@ -391,14 +391,14 @@ export default function AdminPanel() {
                   style={styles.editButton}
                   onPress={() => openEditModal(item)}
                 >
-                  <Text style={styles.editButtonText}>✏️ Düzenle</Text>
+                  <Text style={styles.editButtonText}>Düzenle</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity
                   style={styles.deleteButton}
                   onPress={() => handleDeleteProduct(item.id, item.name)}
                 >
-                  <Text style={styles.deleteButtonText}>🗑️ Sil</Text>
+                  <Text style={styles.deleteButtonText}>Sil</Text>
                 </TouchableOpacity>
               </View>
             </View>
